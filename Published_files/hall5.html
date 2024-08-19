@@ -1,0 +1,274 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>hall5</title><meta name="generator" content="MATLAB 9.14"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2024-04-18"><meta name="DC.source" content="hall5.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput">clear <span class="string">all</span>
+clc
+<span class="comment">% Load flight LiDAR dataset</span>
+flight_data = csvread(<span class="string">'VVA_h5_flightdata.csv'</span>);
+
+<span class="comment">% Extract X, Y, and Z coordinates from flight LiDAR data</span>
+flight_X = flight_data(:, 1);
+flight_Y = flight_data(:, 2);
+flight_Z = flight_data(:, 3);
+
+<span class="comment">% Load GCPs data</span>
+GCP_data = csvread(<span class="string">'VVA_h5.csv'</span>);
+
+<span class="comment">% Extract X, Y, and Z coordinates from GCPs data</span>
+GCP_X = GCP_data(:, 3);
+GCP_Y = GCP_data(:, 2);
+GCP_Z = GCP_data(:, 4);
+
+<span class="comment">% Create Delaunay triangulation from GCPs</span>
+DT = delaunayTriangulation(GCP_X, GCP_Y);
+triangles = DT.ConnectivityList;
+num_triangles = size(triangles, 1);
+
+<span class="comment">% Preallocate array to store perpendicular distances</span>
+distances = zeros(size(flight_data, 1), 1);
+
+<span class="comment">% Loop through each point in flight LiDAR data</span>
+<span class="keyword">for</span> i = 1:size(flight_data, 1)
+    <span class="comment">% Current point coordinates</span>
+    x = flight_X(i);
+    y = flight_Y(i);
+    z = flight_Z(i);
+
+    <span class="comment">% Initialize minimum distance</span>
+    min_distance = Inf;
+
+    <span class="comment">% Loop through each triangle</span>
+    <span class="keyword">for</span> j = 1:num_triangles
+        <span class="comment">% Get vertices of the current triangle</span>
+        v1 = [GCP_X(triangles(j, 1)), GCP_Y(triangles(j, 1)), GCP_Z(triangles(j, 1))];
+        v2 = [GCP_X(triangles(j, 2)), GCP_Y(triangles(j, 2)), GCP_Z(triangles(j, 2))];
+        v3 = [GCP_X(triangles(j, 3)), GCP_Y(triangles(j, 3)), GCP_Z(triangles(j, 3))];
+
+        <span class="comment">% Calculate plane equation coefficients (ax + by + cz + d = 0)</span>
+        [A, B, C, D] = plane_equation(v1, v2, v3);
+
+        <span class="comment">% Calculate perpendicular distance from point to plane</span>
+        distance = abs(A * x + B * y + C * z + D) / sqrt(A^2 + B^2 + C^2);
+
+        <span class="comment">% Update minimum distance</span>
+        min_distance = min(min_distance, distance);
+    <span class="keyword">end</span>
+
+    <span class="comment">% Store minimum distance for current point</span>
+    distances(i) = min_distance;
+<span class="keyword">end</span>
+
+<span class="comment">% Calculate Root Mean Square Error (RMSE)</span>
+RMSE = sqrt(mean(distances.^2));
+
+<span class="comment">% Calculate Mean Absolute Error (MAE)</span>
+MAE = mean(abs(distances));
+acc = 1.96 * RMSE;
+<span class="comment">% Display the results</span>
+fprintf(<span class="string">'RMSE: %.2f metres\n'</span>, RMSE);
+fprintf(<span class="string">'Vertical Accuracy: %.2f metres \n'</span>, acc);
+
+<span class="comment">% Plot the TIN</span>
+triplot(DT);
+xlabel(<span class="string">'X'</span>);
+ylabel(<span class="string">'Y'</span>);
+zlabel(<span class="string">'Z'</span>);
+title(<span class="string">'TIN surface generated for a patch of GCPs'</span>);
+
+<span class="comment">% If you want to visualize the GCPs as well</span>
+hold <span class="string">on</span>;
+scatter3(GCP_X, GCP_Y, GCP_Z, <span class="string">'filled'</span>, <span class="string">'MarkerFaceColor'</span>, <span class="string">'r'</span>);
+hold <span class="string">off</span>;
+
+<span class="keyword">function</span> [A, B, C, D] = plane_equation(p1, p2, p3)
+    <span class="comment">% Calculate vectors from p1 to p2 and p1 to p3</span>
+    v1 = p2 - p1;
+    v2 = p3 - p1;
+
+    <span class="comment">% Calculate normal vector to the plane</span>
+    normal = cross(v1, v2);
+
+    <span class="comment">% Normalize the normal vector</span>
+    normal = normal / norm(normal);
+
+    <span class="comment">% Plane equation coefficients (ax + by + cz + d = 0)</span>
+    A = normal(1);
+    B = normal(2);
+    C = normal(3);
+    D = -dot(normal, p1);
+<span class="keyword">end</span>
+
+
+<span class="comment">% Now, 'distances' array contains perpendicular distances for each point in flight LiDAR data</span>
+</pre><pre class="codeoutput">RMSE: 0.59 metres
+Vertical Accuracy: 1.17 metres 
+</pre><img vspace="5" hspace="5" src="hall5_01.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2023a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+clear all
+clc
+% Load flight LiDAR dataset
+flight_data = csvread('VVA_h5_flightdata.csv');
+
+% Extract X, Y, and Z coordinates from flight LiDAR data
+flight_X = flight_data(:, 1);
+flight_Y = flight_data(:, 2);
+flight_Z = flight_data(:, 3);
+
+% Load GCPs data
+GCP_data = csvread('VVA_h5.csv');
+
+% Extract X, Y, and Z coordinates from GCPs data
+GCP_X = GCP_data(:, 3);
+GCP_Y = GCP_data(:, 2);
+GCP_Z = GCP_data(:, 4);
+
+% Create Delaunay triangulation from GCPs
+DT = delaunayTriangulation(GCP_X, GCP_Y);
+triangles = DT.ConnectivityList;
+num_triangles = size(triangles, 1);
+
+% Preallocate array to store perpendicular distances
+distances = zeros(size(flight_data, 1), 1);
+
+% Loop through each point in flight LiDAR data
+for i = 1:size(flight_data, 1)
+    % Current point coordinates
+    x = flight_X(i);
+    y = flight_Y(i);
+    z = flight_Z(i);
+    
+    % Initialize minimum distance
+    min_distance = Inf;
+    
+    % Loop through each triangle
+    for j = 1:num_triangles
+        % Get vertices of the current triangle
+        v1 = [GCP_X(triangles(j, 1)), GCP_Y(triangles(j, 1)), GCP_Z(triangles(j, 1))];
+        v2 = [GCP_X(triangles(j, 2)), GCP_Y(triangles(j, 2)), GCP_Z(triangles(j, 2))];
+        v3 = [GCP_X(triangles(j, 3)), GCP_Y(triangles(j, 3)), GCP_Z(triangles(j, 3))];
+        
+        % Calculate plane equation coefficients (ax + by + cz + d = 0)
+        [A, B, C, D] = plane_equation(v1, v2, v3);
+        
+        % Calculate perpendicular distance from point to plane
+        distance = abs(A * x + B * y + C * z + D) / sqrt(A^2 + B^2 + C^2);
+        
+        % Update minimum distance
+        min_distance = min(min_distance, distance);
+    end
+    
+    % Store minimum distance for current point
+    distances(i) = min_distance;
+end
+
+% Calculate Root Mean Square Error (RMSE)
+RMSE = sqrt(mean(distances.^2));
+
+% Calculate Mean Absolute Error (MAE)
+MAE = mean(abs(distances));
+acc = 1.96 * RMSE;
+% Display the results
+fprintf('RMSE: %.2f metres\n', RMSE);
+fprintf('Vertical Accuracy: %.2f metres \n', acc);
+
+% Plot the TIN
+triplot(DT);
+xlabel('X');
+ylabel('Y');
+zlabel('Z');
+title('TIN surface generated for a patch of GCPs');
+
+% If you want to visualize the GCPs as well
+hold on;
+scatter3(GCP_X, GCP_Y, GCP_Z, 'filled', 'MarkerFaceColor', 'r');
+hold off;
+
+function [A, B, C, D] = plane_equation(p1, p2, p3)
+    % Calculate vectors from p1 to p2 and p1 to p3
+    v1 = p2 - p1;
+    v2 = p3 - p1;
+    
+    % Calculate normal vector to the plane
+    normal = cross(v1, v2);
+    
+    % Normalize the normal vector
+    normal = normal / norm(normal);
+    
+    % Plane equation coefficients (ax + by + cz + d = 0)
+    A = normal(1);
+    B = normal(2);
+    C = normal(3);
+    D = -dot(normal, p1);
+end
+
+
+% Now, 'distances' array contains perpendicular distances for each point in flight LiDAR data
+
+##### SOURCE END #####
+--></body></html>
